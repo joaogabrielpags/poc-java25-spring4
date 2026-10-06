@@ -1,0 +1,37 @@
+{
+  "name": "poc-java25-spring4",
+  "dockerComposeFile": "compose.yaml",
+  "service": "devcontainer",
+  "workspaceFolder": "/workspaces/poc-java25-spring4",
+  "shutdownAction": "stopCompose",
+  "remoteUser": "vscode",
+
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+
+  "forwardPorts": [8080, "jaeger:16686", "prometheus:9090"],
+  "portsAttributes": {
+    "8080": { "label": "App (Spring Boot)", "onAutoForward": "notify" },
+    "jaeger:16686": { "label": "Jaeger UI" },
+    "prometheus:9090": { "label": "Prometheus" }
+  },
+
+  "postCreateCommand": "./gradlew --no-daemon compileJava compileTestJava",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "vscjava.vscode-java-pack",
+        "vmware.vscode-boot-dev-pack",
+        "vscjava.vscode-gradle",
+        "redhat.vscode-yaml",
+        "humao.rest-client"
+      ],
+      "settings": {
+        "java.import.gradle.wrapper.enabled": true,
+        "java.configuration.updateBuildConfiguration": "automatic"
+      }
+    }
+  }
+}

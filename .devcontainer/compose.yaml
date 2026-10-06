@@ -1,0 +1,35 @@
+# Reaproveita a stack de observabilidade da raiz (OTel Collector + Jaeger + Prometheus)
+# e adiciona o container de desenvolvimento e os stubs WireMock do ViaCEP (perf/).
+include:
+  - ../docker-compose.yaml
+
+services:
+  devcontainer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: sleep infinity
+    volumes:
+      - ..:/workspaces/poc-java25-spring4:cached
+      - gradle-cache:/home/vscode/.gradle
+    environment:
+      # A aplicação roda dentro da rede do compose: OTLP vai direto para o collector.
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
+      OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: http://otel-collector:4318/v1/metrics
+    depends_on:
+      - otel-collector
+
+  # Cenário A de perf/README.md — ViaCEP saudável.
+  wiremock-viacep-healthy:
+    image: wiremock/wiremock:3.13.2
+    volumes:
+      - ../perf/wiremock/mappings/viacep-healthy.json:/home/wiremock/mappings/viacep-healthy.json:ro
+
+  # Cenário B de perf/README.md — ViaCEP falhando (abre o circuit breaker).
+  wiremock-viacep-failing:
+    image: wiremock/wiremock:3.13.2
+    volumes:
+      - ../perf/wiremock/mappings/viacep-failing.json:/home/wiremock/mappings/viacep-failing.json:ro
+
+volumes:
+  gradle-cache:

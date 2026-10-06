@@ -49,6 +49,21 @@ curl -i -X POST http://localhost:8080/api/v1/users \
 
 O retorno é `201 Created`, com o `id` e o endereço. Use esse `id` em `GET /api/v1/users/{id}` para consultar o usuário. E-mail duplicado retorna `409`; CEP inexistente, `422`.
 
+### 🐳 Ou abra num Dev Container
+
+Sem JDK local? Abra o repo no VS Code e use **Dev Containers: Reopen in Container** (ou crie um Codespace). O ambiente já vem com JDK 25, k6, a stack de observabilidade (OTel Collector, Jaeger em `:16686`, Prometheus em `:9090`) e dois WireMocks do ViaCEP. Dentro do container, `./gradlew bootRun` já envia traces e métricas ao collector.
+
+Para usar o ViaCEP simulado (cenários de [perf/](perf/README.md)):
+
+```bash
+SPRING_HTTP_SERVICECLIENT_VIACEP_BASEURL=http://wiremock-viacep-healthy:8080 \
+APP_HTTP_ALLOWLOOPBACK=true \
+./gradlew bootRun   # troque por wiremock-viacep-failing para abrir o circuito
+```
+
+> [!NOTE]
+> O Dev Container sobe o `docker-compose.yaml` da raiz; não rode `docker compose up` em paralelo (os nomes de container conflitam).
+
 > [!NOTE]
 > O H2 em memória descarta os dados ao encerrar a aplicação. A telemetria aponta para um collector local — veja como visualizar traces e métricas no [guia de observabilidade](docs/guia-de-exploracao.md#-observabilidade-local-opcional).
 
@@ -79,10 +94,10 @@ Siga o cadastro do HTTP ao domínio e depois explore como ele lida com falhas:
 
 ## 📚 Vá além
 
-**[Guia de exploração](docs/guia-de-exploracao.md)** — API, trilha de estudo, arquitetura, observabilidade e desafios.
+**[Guia de exploração](docs/guia-de-exploracao.md)**: API, trilha de estudo, arquitetura, observabilidade e desafios.
 
-**[Testes de carga](perf/README.md)** — k6 + WireMock para comparar o serviço com ViaCEP saudável e circuito aberto.
+**[Testes de carga](perf/README.md)**: k6 + WireMock para comparar o serviço com ViaCEP saudável e circuito aberto.
 
 ---
 
-💬 **Encontrou outra forma de fazer?** Abra uma issue ou PR — a PoC existe para essa troca.
+💬 **Encontrou outra forma de fazer?** Abra uma issue ou PR (a PoC existe para isso!).

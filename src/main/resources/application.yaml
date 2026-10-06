@@ -68,8 +68,6 @@ resilience4j:
         wait-duration-in-open-state: 5s
         permitted-number-of-calls-in-half-open-state: 3
         automatic-transition-from-open-to-half-open-enabled: true
-        ignore-exceptions:
-          - com.pagbank.userregistration.addresslookup.CepNotFoundException
         record-exceptions:
           - org.springframework.web.client.ResourceAccessException
           - org.springframework.web.client.HttpServerErrorException

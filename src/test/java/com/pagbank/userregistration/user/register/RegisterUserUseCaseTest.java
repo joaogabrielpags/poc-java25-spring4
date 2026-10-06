@@ -9,6 +9,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 import com.pagbank.userregistration.addresslookup.AddressLookup;
+import com.pagbank.userregistration.addresslookup.AddressLookupResult;
 import com.pagbank.userregistration.addresslookup.Cep;
 import com.pagbank.userregistration.user.domain.Address;
 import com.pagbank.userregistration.user.domain.Email;
@@ -19,7 +20,6 @@ import io.micrometer.observation.ObservationRegistry;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
-import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.ApplicationEventPublisher;
@@ -58,7 +58,7 @@ class RegisterUserUseCaseTest {
 		given(userRepository.existsByEmail(any())).willReturn(false);
 		Address enrichedAddress =
 				new Address(new Cep("70040-010"), "Rua Tal", "Bairro X", "Brasília", "DF");
-		given(addressLookup.lookup(any())).willReturn(Optional.of(enrichedAddress));
+		given(addressLookup.lookup(any())).willReturn(new AddressLookupResult.Found(enrichedAddress));
 		RegisterUserRequest request = new RegisterUserRequest("Ana Silva", "ana@example.com", "70040-010");
 
 		User user = useCase.register(request);
@@ -71,7 +71,7 @@ class RegisterUserUseCaseTest {
 	@Test
 	void shouldDegradeToCepOnlyWhenLookupIsEmpty() {
 		given(userRepository.existsByEmail(any())).willReturn(false);
-		given(addressLookup.lookup(any())).willReturn(Optional.empty());
+		given(addressLookup.lookup(any())).willReturn(new AddressLookupResult.Unavailable(new Cep("70040-010"), "Timeout"));
 		RegisterUserRequest request = new RegisterUserRequest("Ana Silva", "ana@example.com", "70040-010");
 
 		User user = useCase.register(request);

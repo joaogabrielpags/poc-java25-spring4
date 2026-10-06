@@ -98,7 +98,7 @@ class ViaCepWireMockIntegrationTest {
 	void scenarioB_tenFailuresOpenCircuitThenFallbackWithoutCallingWireMock() {
 		WIRE_MOCK.stubFor(get(urlMatching("/ws/.*/json/")).willReturn(aResponse().withStatus(500)));
 		double notEnrichedCountBefore = counterCount("user.registration.total", "enriched", "false");
-		double fallbackCountBefore = meterRegistry.counter("user.registration.fallback").count();
+		double fallbackCountBefore = fallbackCount();
 
 		for (int i = 0; i < 10; i++) {
 			ResponseEntity<RegisterUserResponse> response = registerUser();
@@ -131,7 +131,7 @@ class ViaCepWireMockIntegrationTest {
 		// T4.3: 11 cadastros degradados (10 falhas técnicas + 1 circuito aberto) e o
 		// mesmo número de incrementos em user.registration.fallback (T3.5).
 		assertThat(counterCount("user.registration.total", "enriched", "false")).isEqualTo(notEnrichedCountBefore + 11);
-		assertThat(meterRegistry.counter("user.registration.fallback").count()).isEqualTo(fallbackCountBefore + 11);
+		assertThat(fallbackCount()).isEqualTo(fallbackCountBefore + 11);
 	}
 
 	@Test
@@ -169,6 +169,12 @@ class ViaCepWireMockIntegrationTest {
 	private ResponseEntity<RegisterUserResponse> registerUser() {
 		RegisterUserRequest request = new RegisterUserRequest("Usuário Teste", uniqueEmail(), "70040-010");
 		return restTemplate.postForEntity("/api/v1/users", request, RegisterUserResponse.class);
+	}
+
+	private double fallbackCount() {
+		return meterRegistry.find("user.registration.fallback").counters().stream()
+				.mapToDouble(io.micrometer.core.instrument.Counter::count)
+				.sum();
 	}
 
 	private double counterCount(String name, String tagKey, String tagValue) {

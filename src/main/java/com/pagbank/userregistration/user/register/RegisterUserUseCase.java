@@ -1,7 +1,11 @@
 package com.pagbank.userregistration.user.register;
 
 import com.pagbank.userregistration.addresslookup.AddressLookup;
+import com.pagbank.userregistration.addresslookup.AddressLookupResult.Found;
+import com.pagbank.userregistration.addresslookup.AddressLookupResult.NotFound;
+import com.pagbank.userregistration.addresslookup.AddressLookupResult.Unavailable;
 import com.pagbank.userregistration.addresslookup.Cep;
+import com.pagbank.userregistration.addresslookup.CepNotFoundException;
 import com.pagbank.userregistration.user.domain.Address;
 import com.pagbank.userregistration.user.domain.Email;
 import com.pagbank.userregistration.user.domain.User;
@@ -58,7 +62,8 @@ public class RegisterUserUseCase {
 		Observation observation = Observation.createNotStarted("user.registration", observationRegistry)
 				.contextualName("register-user")
 				.start();
-		try (Observation.Scope scope = observation.openScope()) {
+		// Java 25 (feature): variável sem nome "_" em try-with-resources (JEP 456).
+		try (Observation.Scope _ = observation.openScope()) {
 			User user = doRegister(request);
 			observation.lowCardinalityKeyValue("enriched", String.valueOf(user.addressEnriched()));
 			observation.lowCardinalityKeyValue("outcome", "success");
@@ -85,10 +90,15 @@ public class RegisterUserUseCase {
 		Cep cep = new Cep(request.cep());
 		boolean enriched = false;
 		Address address = Address.cepOnly(cep);
-		var lookupResult = addressLookup.lookup(cep);
-		if (lookupResult.isPresent()) {
-			address = lookupResult.orElseThrow();
-			enriched = true;
+		// Java 25 (feature): switch exaustivo sobre tipo selado + record patterns (JEP 440/441).
+		switch (addressLookup.lookup(cep)) {
+			case Found(var found) -> {
+				address = found;
+				enriched = true;
+			}
+			// Java 25 (feature): pattern sem nome "_" (JEP 456).
+			case Unavailable _ -> { }
+			case NotFound(var missing) -> throw new CepNotFoundException(missing);
 		}
 
 		User user = User.register(request.name(), email, address, enriched, clock);

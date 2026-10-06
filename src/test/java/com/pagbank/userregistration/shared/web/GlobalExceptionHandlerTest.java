@@ -40,7 +40,8 @@ class GlobalExceptionHandlerTest {
 				.andExpect(status().isNotFound())
 				.andExpect(content().contentType("application/problem+json"))
 				.andExpect(jsonPath("$.type").value("urn:problem:user-not-found"))
-				.andExpect(jsonPath("$.status").value(404));
+				.andExpect(jsonPath("$.status").value(404))
+				.andExpect(jsonPath("$.userId").value(id.value().toString()));
 	}
 
 	@Test
@@ -63,7 +64,8 @@ class GlobalExceptionHandlerTest {
 				.andExpect(status().isUnprocessableEntity())
 				.andExpect(content().contentType("application/problem+json"))
 				.andExpect(jsonPath("$.type").value("urn:problem:cep-not-found"))
-				.andExpect(jsonPath("$.status").value(422));
+				.andExpect(jsonPath("$.status").value(422))
+				.andExpect(jsonPath("$.cep").value("70040-010"));
 	}
 
 	@Test

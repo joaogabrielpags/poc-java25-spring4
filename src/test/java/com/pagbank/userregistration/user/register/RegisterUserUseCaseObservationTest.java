@@ -7,6 +7,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 
 import com.pagbank.userregistration.addresslookup.AddressLookup;
+import com.pagbank.userregistration.addresslookup.AddressLookupResult;
 import com.pagbank.userregistration.addresslookup.Cep;
 import com.pagbank.userregistration.user.domain.Address;
 import com.pagbank.userregistration.user.domain.UserAlreadyExistsException;
@@ -15,7 +16,6 @@ import io.micrometer.observation.tck.TestObservationRegistry;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
-import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.ApplicationEventPublisher;
@@ -50,7 +50,7 @@ class RegisterUserUseCaseObservationTest {
 	void shouldRecordObservationWithEnrichedTrueOnSuccess() {
 		given(userRepository.existsByEmail(any())).willReturn(false);
 		Address enrichedAddress = new Address(new Cep("70040-010"), "Rua Tal", "Bairro X", "Brasília", "DF");
-		given(addressLookup.lookup(any())).willReturn(Optional.of(enrichedAddress));
+		given(addressLookup.lookup(any())).willReturn(new AddressLookupResult.Found(enrichedAddress));
 
 		useCase.register(new RegisterUserRequest("Ana Silva", "ana@example.com", "70040-010"));
 
@@ -66,7 +66,7 @@ class RegisterUserUseCaseObservationTest {
 	@Test
 	void shouldRecordObservationWithEnrichedFalseWhenDegraded() {
 		given(userRepository.existsByEmail(any())).willReturn(false);
-		given(addressLookup.lookup(any())).willReturn(Optional.empty());
+		given(addressLookup.lookup(any())).willReturn(new AddressLookupResult.Unavailable(new Cep("70040-010"), "Timeout"));
 
 		useCase.register(new RegisterUserRequest("Ana Silva", "ana@example.com", "70040-010"));
 

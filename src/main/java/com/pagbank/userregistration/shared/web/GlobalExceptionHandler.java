@@ -57,6 +57,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 		ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
 		problemDetail.setTitle("Usuário não encontrado");
 		problemDetail.setType(USER_NOT_FOUND_TYPE);
+		problemDetail.setProperty("userId", ex.userId().value());
 		return problemDetail;
 	}
 
@@ -74,6 +75,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 				ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage());
 		problemDetail.setTitle("CEP não encontrado");
 		problemDetail.setType(CEP_NOT_FOUND_TYPE);
+		problemDetail.setProperty("cep", ex.cep().formatted());
 		return problemDetail;
 	}
 

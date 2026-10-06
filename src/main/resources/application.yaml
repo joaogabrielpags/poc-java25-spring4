@@ -1,0 +1,147 @@
+spring:
+  application:
+    name: poc-java25-spring4
+  threads:
+    virtual:
+      enabled: true
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+  mvc:
+    problemdetails:
+      enabled: true
+  http:
+    serviceclient:
+      viacep:
+        base-url: https://viacep.com.br
+        connect-timeout: 2s
+        read-timeout: 3s
+  # T5.4 (RNF-07/hardening): endpoint não usa multipart, mas o limite é fixado
+  # defensivamente (payload de POST /users é um JSON pequeno; nada legítimo deveria
+  # se aproximar de 1MB).
+  servlet:
+    multipart:
+      max-file-size: 1MB
+      max-request-size: 1MB
+
+server:
+  shutdown: graceful
+  # T5.4: limite de tamanho de cabeçalhos HTTP (valor igual ao default do Tomcat,
+  # fixado explicitamente para deixar o hardening documentado — RNF-07).
+  max-http-request-header-size: 8KB
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,circuitbreakers,circuitbreakerevents
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  observations:
+    annotations:
+      enabled: true
+  opentelemetry:
+    resource-attributes:
+      service.version: "@project.version@"
+      deployment.environment: ${ENV:local}
+    tracing:
+      export:
+        otlp:
+          endpoint: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:http://localhost:4318/v1/traces}
+  otlp:
+    metrics:
+      export:
+        url: ${OTEL_EXPORTER_OTLP_METRICS_ENDPOINT:http://localhost:4318/v1/metrics}
+  tracing:
+    sampling:
+      probability: ${TRACING_SAMPLING:1.0}
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      viaCep:
+        sliding-window-size: 10
+        minimum-number-of-calls: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 5s
+        permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true
+        ignore-exceptions:
+          - com.pagbank.userregistration.addresslookup.CepNotFoundException
+        record-exceptions:
+          - org.springframework.web.client.ResourceAccessException
+          - org.springframework.web.client.HttpServerErrorException
+          - org.springframework.boot.http.client.FilteredHostException
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+  h2:
+    console:
+      enabled: true
+
+logging:
+  structured:
+    format:
+      console: ecs
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+  # H2 console permanece desabilitado (default do Boot); nunca ligar em prod (D3).
+  h2:
+    console:
+      enabled: false
+
+logging:
+  structured:
+    format:
+      console: ecs
+
+# T5.3: sampling reduzido (RNF-02/seção 6.7 do PRD já previa 0.1 em produção) e
+# actuator restrito a health/info (sem métricas/circuitbreakers publicamente expostos
+# fora de ambientes controlados). `show-details: never` é o default do Boot — mantido
+# explícito aqui para deixar a decisão de hardening documentada.
+# Timeouts do cliente ViaCEP (RNF-03: connect 2s / read 3s, seção `spring.http.serviceclient`
+# no topo deste arquivo) foram revisados e permanecem adequados também em produção — não
+# há tuning manual de pool do Tomcat, pois virtual threads eliminam a necessidade (RNF-05).
+management:
+  tracing:
+    sampling:
+      probability: 0.1
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+
+---
+spring:
+  config:
+    activate:
+      on-profile: test
+
+app:
+  http:
+    allow-loopback: true
+
+# T4.1: sem collector disponível em test; desabilita exportação OTLP para não gerar
+# stack traces de conexão recusada no log (management.opentelemetry.enabled desliga o
+# SDK OTel/tracing por completo; a exportação de métricas OTLP é um registry Micrometer
+# separado, por isso precisa do seu próprio toggle).
+management:
+  opentelemetry:
+    enabled: false
+  otlp:
+    metrics:
+      export:
+        enabled: false
+

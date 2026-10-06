@@ -1,0 +1,26 @@
+[versions]
+springBoot = "4.1.1"
+springDependencyManagement = "1.1.7"
+errorpronePlugin = "5.1.1"
+errorProneCore = "2.50.0"
+nullaway = "0.14.2"
+jspecify = "1.0.1"
+resilience4j = "2.4.0"
+wiremock = "3.13.2"
+archunit = "1.5.1"
+h2 = "2.5.252"
+jacoco = "0.8.15"
+
+[libraries]
+jspecify = { module = "org.jspecify:jspecify", version.ref = "jspecify" }
+errorProneCore = { module = "com.google.errorprone:error_prone_core", version.ref = "errorProneCore" }
+nullaway = { module = "com.uber.nullaway:nullaway", version.ref = "nullaway" }
+resilience4jSpringBoot4 = { module = "io.github.resilience4j:resilience4j-spring-boot4", version.ref = "resilience4j" }
+h2 = { module = "com.h2database:h2", version.ref = "h2" }
+wiremockStandalone = { module = "org.wiremock:wiremock-standalone", version.ref = "wiremock" }
+archunitJunit5 = { module = "com.tngtech.archunit:archunit-junit5", version.ref = "archunit" }
+
+[plugins]
+springBoot = { id = "org.springframework.boot", version.ref = "springBoot" }
+springDependencyManagement = { id = "io.spring.dependency-management", version.ref = "springDependencyManagement" }
+errorprone = { id = "net.ltgt.errorprone", version.ref = "errorpronePlugin" }

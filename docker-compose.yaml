@@ -1,0 +1,36 @@
+version: "3.9"
+
+# T4.5 (D5): stack local de observabilidade — OTel Collector recebe traces/métricas
+# OTLP HTTP da aplicação (porta 4318, ver application.yaml) e exporta traces para o
+# Jaeger e métricas para o Prometheus (scrape). Ver docs/observability.md.
+services:
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.116.1
+    container_name: user-registration-otel-collector
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./docker/otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
+    ports:
+      - "4317:4317" # OTLP gRPC
+      - "4318:4318" # OTLP HTTP
+      - "8889:8889" # métricas Prometheus expostas pelo collector
+    depends_on:
+      - jaeger
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.62
+    container_name: user-registration-jaeger
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    ports:
+      - "16686:16686" # UI
+
+  prometheus:
+    image: prom/prometheus:v3.0.1
+    container_name: user-registration-prometheus
+    volumes:
+      - ./docker/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    depends_on:
+      - otel-collector

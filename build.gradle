@@ -1,0 +1,127 @@
+plugins {
+	id 'java'
+	id 'jacoco'
+	alias(libs.plugins.springBoot)
+	alias(libs.plugins.springDependencyManagement)
+	alias(libs.plugins.errorprone)
+}
+
+group = 'com.pagbank'
+version = '0.0.1-SNAPSHOT'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(25)
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	implementation 'org.springframework.boot:spring-boot-starter-opentelemetry'
+	implementation 'org.springframework.boot:spring-boot-restclient'
+	implementation 'org.springframework.boot:spring-boot-http-client'
+	implementation libs.jspecify
+	implementation libs.resilience4jSpringBoot4
+
+	errorprone libs.errorProneCore
+	errorprone libs.nullaway
+
+	runtimeOnly libs.h2
+
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'org.springframework.boot:spring-boot-data-jpa-test'
+	testImplementation 'org.springframework.boot:spring-boot-webmvc-test'
+	testImplementation 'org.springframework.boot:spring-boot-resttestclient'
+	testImplementation 'io.micrometer:micrometer-test'
+	testImplementation libs.wiremockStandalone
+	testImplementation libs.archunitJunit5
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
+
+// T4.1: permite referenciar "@project.version@" em application.yaml (D8/PRD 6.7),
+// análogo ao resource filtering do Maven — Gradle não faz isso nativamente.
+tasks.named('processResources') {
+	filesMatching('application.yaml') {
+		filter(org.apache.tools.ant.filters.ReplaceTokens, tokens: ['project.version': project.version.toString()])
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	options.errorprone {
+		disableWarningsInGeneratedCode = true
+		option('NullAway:OnlyNullMarked', 'true')
+		option('NullAway:JSpecifyMode', 'true')
+		error('NullAway')
+	}
+}
+
+// NullAway em modo ERROR trava src/test; rebaixar para WARN nesse source set (T1.4).
+tasks.named('compileTestJava', JavaCompile).configure {
+	options.errorprone {
+		warn('NullAway')
+	}
+}
+
+// T5.1 (RNF-06): cobertura mínima de 80% de linhas em user.. e addresslookup..,
+// excluindo shared.config, a classe de bootstrap e records DTO (sem lógica própria).
+jacoco {
+	toolVersion = libs.versions.jacoco.get()
+}
+
+def coverageExclusions = [
+	'**/UserRegistrationServiceApplication.class',
+	'**/shared/config/**',
+	'**/*Request.class',
+	'**/*Response.class'
+]
+
+tasks.named('jacocoTestReport') {
+	dependsOn tasks.named('test')
+	reports {
+		xml.required = true
+		html.required = true
+	}
+}
+
+tasks.named('jacocoTestCoverageVerification') {
+	dependsOn tasks.named('test')
+	violationRules {
+		rule {
+			element = 'PACKAGE'
+			includes = [
+				'com.pagbank.userregistration.user*',
+				'com.pagbank.userregistration.addresslookup*'
+			]
+			limit {
+				counter = 'LINE'
+				value = 'COVEREDRATIO'
+				minimum = 0.80
+			}
+		}
+	}
+}
+
+tasks.named('check') {
+	dependsOn tasks.named('jacocoTestCoverageVerification')
+}
+
+afterEvaluate {
+	[tasks.named('jacocoTestReport'), tasks.named('jacocoTestCoverageVerification')].each { taskProvider ->
+		taskProvider.configure { task ->
+			task.classDirectories.setFrom(files(task.classDirectories.files.collect {
+				fileTree(dir: it, excludes: coverageExclusions)
+			}))
+		}
+	}
+}

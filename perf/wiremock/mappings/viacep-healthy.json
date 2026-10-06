@@ -1,0 +1,18 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPattern": "/ws/.*/json/"
+  },
+  "response": {
+    "status": 200,
+    "headers": { "Content-Type": "application/json" },
+    "jsonBody": {
+      "cep": "70040-010",
+      "logradouro": "Praça dos Três Poderes",
+      "bairro": "Zona Cívico-Administrativa",
+      "localidade": "Brasília",
+      "uf": "DF"
+    },
+    "fixedDelayMilliseconds": 50
+  }
+}

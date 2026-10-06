@@ -2,7 +2,7 @@
 
 # ☕ poc-java25-spring4
 
-### *User Registration Service* — uma PoC para aprender **Java 25 + Spring Boot 4** com código real
+### *User Registration Service* - uma PoC para aprender **Java 25 + Spring Boot 4** com código real
 
 [![build](https://github.com/joaogabrielpags/poc-java25-spring4/actions/workflows/build.yml/badge.svg)](https://github.com/joaogabrielpags/poc-java25-spring4/actions/workflows/build.yml)
 ![Java 25](https://img.shields.io/badge/Java-25_LTS-ED8B00?logo=openjdk&logoColor=white)
@@ -26,7 +26,7 @@
 
 ## 🤔 Por que este repositório existe?
 
-Java 25 (LTS) e Spring Boot 4 / Spring Framework 7 são recentes — e mudaram coisas de forma
+Java 25 (LTS) e Spring Boot 4 / Spring Framework 7 são recentes - e mudaram coisas de forma
 **silenciosa, mas importante**:
 
 | Antes | Agora |
@@ -38,7 +38,7 @@ Java 25 (LTS) e Spring Boot 4 / Spring Framework 7 são recentes — e mudaram c
 | Tuning de thread pool | **Virtual threads** com uma linha de YAML |
 
 Em vez de ler release notes, aqui você **lê código que compila, passa em 60+ testes e sobe em
-segundos** — e cada decisão tem um comentário explicando *por quê*.
+segundos** - e cada decisão tem um comentário explicando *por quê*.
 
 > 💬 Este repo é para você abrir no IDE, **quebrar, consertar e aprender**.
 
@@ -60,7 +60,7 @@ Cliente ──POST /api/v1/users──▶ [RegisterUserController] ──▶ [Re
 
 1. 📥 Recebe **nome, e-mail e CEP**.
 2. 🚫 Rejeita e-mail duplicado (`409`).
-3. 🌐 Consulta o ViaCEP com um client HTTP **declarativo** — uma interface, zero implementação.
+3. 🌐 Consulta o ViaCEP com um client HTTP **declarativo** - uma interface, zero implementação.
 4. 🛡️ Se o ViaCEP cair, estourar o timeout ou o circuito abrir, **degrada graciosamente**:
    salva só com o CEP e marca `addressEnriched=false`. *Nunca* falha o cadastro por culpa de terceiro.
 5. 💾 Persiste, publica um evento de domínio, emite métricas e um *span* customizado.
@@ -76,7 +76,7 @@ Cliente ──POST /api/v1/users──▶ [RegisterUserController] ──▶ [Re
 | ⚡ `GET` | `/actuator/circuitbreakers` | Estado do circuito `viaCep` (`CLOSED` / `OPEN` / `HALF_OPEN`) | `200` |
 | 📜 `GET` | `/actuator/circuitbreakerevents` | Histórico de transições do circuito | `200` |
 
-> 📐 Todos os erros seguem **RFC 9457 (Problem Details)** — veja `shared/web/GlobalExceptionHandler.java`.
+> 📐 Todos os erros seguem **RFC 9457 (Problem Details)** - veja `shared/web/GlobalExceptionHandler.java`.
 
 ---
 
@@ -138,7 +138,7 @@ curl -s http://localhost:8080/actuator/circuitbreakers | jq                     
 curl -s http://localhost:8080/actuator/metrics/user.registration.fallback | jq  # 👉 contador subindo
 ```
 
-Os cadastros **continuam retornando `201`** — agora com `"addressEnriched": false` e só o
+Os cadastros **continuam retornando `201`** - agora com `"addressEnriched": false` e só o
 `cep` dentro de `address`. Isso é degradação graciosa na prática. 🎯
 
 ### 🔭 Observabilidade local (opcional)
@@ -166,9 +166,9 @@ em ordem sugerida de leitura.
 
 | Onde | O que ver |
 |---|---|
-| `build.gradle` → `toolchain` | JDK 25 via Gradle Toolchain — o build **falha** se o JDK não existir, em vez de compilar com a versão errada. |
+| `build.gradle` → `toolchain` | JDK 25 via Gradle Toolchain - o build **falha** se o JDK não existir, em vez de compilar com a versão errada. |
 | `application.yaml` → `spring.threads.virtual.enabled` | Virtual threads ligadas por padrão, sem tuning de pool do Tomcat. |
-| `user/domain/*.java` | Domínio 100 % em **records** com construtores compactos validando invariantes (`Cep`, `Email`, `User`). Nenhum `@Entity` — e o `ArchitectureTest` garante. |
+| `user/domain/*.java` | Domínio 100 % em **records** com construtores compactos validando invariantes (`Cep`, `Email`, `User`). Nenhum `@Entity` - e o `ArchitectureTest` garante. |
 
 > 🧪 **Experimente:** logue `Thread.currentThread().isVirtual()` dentro de um controller e dispare uma request.
 </details>
@@ -180,13 +180,13 @@ em ordem sugerida de leitura.
 |---|---|
 | `addresslookup/viacep/CepClient.java` | A interface **inteira** do cliente ViaCEP: `@HttpExchange` + `@GetExchange`. Sem `RestTemplate`, sem Feign, sem implementação. |
 | `addresslookup/viacep/HttpClientsConfig.java` | `@ImportHttpServices(group = "viacep")` registra o client; `spring.http.serviceclient.viacep.*` configura base-url e timeouts por YAML. |
-| ↳ mesmo arquivo | 🔒 **Hardening anti-SSRF** com `InetAddressFilter.externalAddresses()` — API nova do Boot 4 que impede o client de falar com `localhost` / redes privadas. Veja como o perfil `test` relaxa isso para o WireMock. |
+| ↳ mesmo arquivo | 🔒 **Hardening anti-SSRF** com `InetAddressFilter.externalAddresses()` - API nova do Boot 4 que impede o client de falar com `localhost` / redes privadas. Veja como o perfil `test` relaxa isso para o WireMock. |
 
 > 🧪 **Experimente:** rode `./gradlew bootRun` com `--spring.http.serviceclient.viacep.base-url=http://127.0.0.1:9` e veja o SSRF filter bloquear antes mesmo de conectar.
 </details>
 
 <details open>
-<summary><h3>🚫 3. Null safety como contrato — JSpecify + NullAway</h3></summary>
+<summary><h3>🚫 3. Null safety como contrato - JSpecify + NullAway</h3></summary>
 
 | Onde | O que ver |
 |---|---|
@@ -203,15 +203,15 @@ em ordem sugerida de leitura.
 | Onde | O que ver |
 |---|---|
 | `build.gradle` → `spring-boot-starter-opentelemetry` | Starter novo do Boot 4: traces e métricas via OTLP **sem agente Java**. |
-| `user/register/RegisterUserUseCase.java` | `Observation` manual (span + timer) com tags de **baixa cardinalidade** (`enriched`, `outcome`) — e o comentário explicando por que *não* usar `@Observed` aqui. |
+| `user/register/RegisterUserUseCase.java` | `Observation` manual (span + timer) com tags de **baixa cardinalidade** (`enriched`, `outcome`) - e o comentário explicando por que *não* usar `@Observed` aqui. |
 | `user/register/UserRegistrationMetricsListener.java` | Métrica de negócio alimentada por **evento de domínio** (`UserRegistered`), desacoplando o use case do `MeterRegistry`. |
-| `shared/config/StructuredLoggingCorrelationTest.java` | Logs ECS/JSON correlacionados a `trace_id` / `span_id` — sem MDC manual. |
+| `shared/config/StructuredLoggingCorrelationTest.java` | Logs ECS/JSON correlacionados a `trace_id` / `span_id` - sem MDC manual. |
 
 > 🧪 **Experimente:** suba o `docker compose`, faça um cadastro e encontre o span `register-user` no Jaeger. Depois force um fallback e compare as tags.
 </details>
 
 <details open>
-<summary><h3>⚡ 5. Resiliência — Resilience4j no Boot 4</h3></summary>
+<summary><h3>⚡ 5. Resiliência - Resilience4j no Boot 4</h3></summary>
 
 | Onde | O que ver |
 |---|---|
@@ -219,7 +219,7 @@ em ordem sugerida de leitura.
 | `application.yaml` → `resilience4j.circuitbreaker` | `ignore-exceptions` vs `record-exceptions`, janela deslizante, half-open automático. |
 | `ViaCepWireMockIntegrationTest` | **4 cenários**: sucesso · 10 falhas → `OPEN` → fallback sem rede · `erro:true` → `422` · read timeout. WireMock em porta dinâmica com `@DynamicPropertySource`. |
 
-> 🧪 **Experimente:** mude `minimum-number-of-calls` para `20` e veja qual cenário do `ViaCepWireMockIntegrationTest` quebra — e por quê.
+> 🧪 **Experimente:** mude `minimum-number-of-calls` para `20` e veja qual cenário do `ViaCepWireMockIntegrationTest` quebra - e por quê.
 </details>
 
 <details open>
@@ -227,7 +227,7 @@ em ordem sugerida de leitura.
 
 | Onde | O que ver |
 |---|---|
-| `user/register/`, `user/find/` | Cada *slice* carrega controller, use case e DTOs **juntos**. Nada de `controller/`, `service/`, `repository/` na raiz — `ArchitectureTest.noLegacyLayeredPackagesAtRoot` proíbe. |
+| `user/register/`, `user/find/` | Cada *slice* carrega controller, use case e DTOs **juntos**. Nada de `controller/`, `service/`, `repository/` na raiz - `ArchitectureTest.noLegacyLayeredPackagesAtRoot` proíbe. |
 | `addresslookup/AddressLookup.java` | Port de domínio; `viacep/` é o adapter. O slice `user` **não enxerga** `viacep` (regra ArchUnit). |
 | `shared/persistence/` | Único lugar com JPA. `UserJpaEntity` ↔ `User` via mapper explícito. |
 | `shared/web/GlobalExceptionHandler.java` | `ProblemDetail` nativo do Spring, sem biblioteca extra. |
@@ -240,7 +240,7 @@ em ordem sugerida de leitura.
 
 | Onde | O que ver |
 |---|---|
-| `build.gradle` → dependências de teste | `spring-boot-webmvc-test`, `spring-boot-data-jpa-test`, `spring-boot-resttestclient` — no Boot 4 os *slices* de teste são **módulos separados**, não vêm todos no `starter-test`. |
+| `build.gradle` → dependências de teste | `spring-boot-webmvc-test`, `spring-boot-data-jpa-test`, `spring-boot-resttestclient` - no Boot 4 os *slices* de teste são **módulos separados**, não vêm todos no `starter-test`. |
 | `RegisterUserControllerTest` / `FindUserControllerTest` | `@WebMvcTest` focado só na camada web. |
 | `SecurityHardeningIntegrationTest` | Container real: header `Server` suprimido, cabeçalho > 8 KB rejeitado. |
 | `ProdProfileHardeningTest` | Garante que o perfil `prod` tem actuator restrito e sampling de 10 %. |
@@ -253,8 +253,8 @@ em ordem sugerida de leitura.
 ```
 com.pagbank.userregistration
 ├── 👤 user
-│   ├── domain          # User, Email, Address, UserId, UserRegistered — records puros, sem framework
-│   ├── register        # POST /api/v1/users — controller, use case, DTOs, listener de métricas
+│   ├── domain          # User, Email, Address, UserId, UserRegistered - records puros, sem framework
+│   ├── register        # POST /api/v1/users - controller, use case, DTOs, listener de métricas
 │   └── find            # GET  /api/v1/users/{id}
 ├── 📍 addresslookup    # port AddressLookup + VO Cep + CepNotFoundException
 │   └── viacep          # adapter: CepClient (@HttpExchange), circuit breaker, SSRF hardening
@@ -312,7 +312,7 @@ O mesmo `./gradlew build` roda no GitHub Actions (`.github/workflows/build.yml`)
 
 ## 💡 Desafios para continuar explorando
 
-Forke e tente — cada mudança ensina algo diferente sobre a stack:
+Forke e tente - cada mudança ensina algo diferente sobre a stack:
 
 - [ ] 🐘 Trocar o H2 por **PostgreSQL** com Testcontainers e `@ServiceConnection`.
 - [ ] 🔁 Adicionar um segundo HTTP Service Client (ex.: BrasilAPI) e fazer *fallback em cascata* antes de degradar.
@@ -329,7 +329,7 @@ Forke e tente — cada mudança ensina algo diferente sobre a stack:
 
 - [ ] Todo pacote novo em `src/main` tem `package-info.java` com `@NullMarked`.
 - [ ] Ausência é modelada com `@Nullable` em parâmetros/retornos (ou `Optional` quando a
-      ausência é resultado de negócio em port/use case) — nunca `Optional` em campos.
+      ausência é resultado de negócio em port/use case) - nunca `Optional` em campos.
 - [ ] `./gradlew compileJava` passa sem violações de NullAway (`ERROR` em `src/main`,
       `WARN` em `src/test`).
 - [ ] Nenhum `@SuppressWarnings("NullAway")` novo sem justificativa em comentário.
@@ -340,6 +340,6 @@ Forke e tente — cada mudança ensina algo diferente sobre a stack:
 <div align="center">
 
 Encontrou algo que poderia ser mais idiomático em Java 25 ou Spring Boot 4?
-**Abra uma issue ou PR** — a PoC existe exatamente para essa conversa. 🙌
+**Abra uma issue ou PR** - a PoC existe exatamente para essa conversa. 🙌
 
 </div>

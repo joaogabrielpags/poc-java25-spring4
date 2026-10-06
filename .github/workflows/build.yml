@@ -35,6 +35,36 @@ jobs:
       - name: Build (compile, NullAway, tests and ArchUnit)
         run: ./gradlew build
 
+      - name: Coverage summary
+        if: always()
+        shell: python
+        run: |
+          import os, xml.etree.ElementTree as ET
+          path = 'build/reports/jacoco/test/jacocoTestReport.xml'
+          if not os.path.exists(path):
+              raise SystemExit('No JaCoCo report found')
+
+          def line_counter(node):
+              for c in node.findall('counter'):
+                  if c.get('type') == 'LINE':
+                      return int(c.get('missed')), int(c.get('covered'))
+              return 0, 0
+
+          def row(name, missed, covered):
+              total = missed + covered
+              pct = 100 * covered / total if total else 100
+              return f'| {name} | {covered} | {total} | {pct:.1f}% |'
+
+          root = ET.parse(path).getroot()
+          lines = ['## JaCoCo line coverage', '',
+                   '| Package | Covered | Total | Coverage |',
+                   '|---|---|---|---|']
+          for pkg in root.findall('package'):
+              lines.append(row(pkg.get('name').replace('/', '.'), *line_counter(pkg)))
+          lines.append(row('**Total**', *line_counter(root)))
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as f:
+              f.write('\n'.join(lines) + '\n')
+
       - name: Upload test and coverage reports
         if: always()
         uses: actions/upload-artifact@v4

@@ -48,6 +48,7 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+	finalizedBy tasks.named('jacocoTestReport')
 }
 
 // T4.1: permite referenciar "@project.version@" em application.yaml (D8/PRD 6.7),
